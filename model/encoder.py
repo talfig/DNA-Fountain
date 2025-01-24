@@ -4,11 +4,11 @@ import operator
 
 
 class Encoder:
-    def __init__(self, kernel, bits):
+    def __init__(self, seeds, ranks, bits):
         assert len(bits) == 32, "Input must be a 32-bit binary sequence."
-        self.kernel = kernel
-        self.bits = bits
-        self.segments = [self.bits[i:i + 4] for i in range(0, len(self.bits), 4)]
+        self.seeds = seeds
+        self.ranks = ranks
+        self.segments = [bits[i:i + 4] for i in range(0, len(bits), 4)]
 
     @staticmethod
     def _is_valid_droplet(droplet):
@@ -29,28 +29,26 @@ class Encoder:
 
     def generate_droplets(self):
         droplets = []
-        for seed, rank in self.kernel:
-            random.seed(seed)
-            for _ in range(rank):
-                # Randomly select `rank` segments
-                chosen_segments = random.sample(self.segments, rank)
+        for seed, rank in zip(self.seeds, self.ranks):
+            random.seed(int(seed, 2))
 
-                # Convert strings to integers
-                chosen_segments = [int(segment, 2) for segment in chosen_segments]
+            # Randomly select `rank` segments
+            chosen_segments = random.sample(self.segments, rank)
 
-                # XOR the selected segments
-                xor_result = reduce(operator.xor, chosen_segments)
+            # Convert strings to integers
+            chosen_segments = [int(segment, 2) for segment in chosen_segments]
 
-                # Convert XOR result to binary string
-                binary_result = bin(xor_result)[2:]
+            # XOR the selected segments
+            xor_result = reduce(operator.xor, chosen_segments)
 
-                # Check validity of the binary result
-                if self._is_valid_droplet(binary_result):
-                    # Concatenate the seed to the droplet
-                    droplet = f"{seed}{binary_result}"
+            # Convert XOR result to binary string and ensure it's 4 bits long
+            binary_result = bin(xor_result)[2:].zfill(4)
 
-                    # Append the droplet to the droplets list
-                    droplets.append(droplet)
+            # Concatenate the seed to the droplet
+            droplet = f"{seed}{binary_result}"
+
+            # Append the droplet to the droplets list
+            droplets.append(droplet)
 
         return droplets
 
