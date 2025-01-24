@@ -152,4 +152,5 @@ class Decoder:
         for i, segment in enumerate(predicted_segments[1:], start=1):
             print(f"Segment {i}: {segment}")
 
+        print()
         return predicted_segments[1:]
