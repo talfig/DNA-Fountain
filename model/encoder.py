@@ -10,23 +10,6 @@ class Encoder:
         self.ranks = ranks
         self.segments = [bits[i:i + 4] for i in range(0, len(bits), 4)]
 
-    @staticmethod
-    def _is_valid_droplet(droplet):
-        """
-        Checks if the droplet is valid:
-        - GC content is at least 50%.
-        - No long runs of the same base (e.g., AAAAA).
-        """
-        # Calculate GC content
-        gc_count = sum(1 for base in droplet if base in "GC")
-        gc_content = gc_count / len(droplet)
-
-        # Check for long runs of the same base (e.g., AAAAA)
-        has_long_run = any(droplet[i:i + 5] == droplet[i] * 5 for i in range(len(droplet) - 4))
-
-        # Valid if GC content >= 50% and no long runs
-        return gc_content >= 0.5 and not has_long_run
-
     def generate_droplets(self):
         droplets = []
         for seed, rank in zip(self.seeds, self.ranks):
