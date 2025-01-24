@@ -33,22 +33,33 @@ class Decoder:
         return graph
 
     @staticmethod
-    def update_graph(graph, key, value):
+    def update_graph(graph, droplet, segment):
         # Traverse the graph and update
-        for idx, (key1, value1) in enumerate(graph):
-            # Remove value if it exists in value1
-            if value in value1:
-                value1.remove(value)
-                graph[idx] = (key1 ^ key, value1)
+        for idx, (key, segments) in enumerate(graph):
+            # Remove segment if it exists in segments
+            if segment in segments:
+                segments.remove(segment)
+                graph[idx] = (droplet ^ key, segments)
 
     def decode_oligomers(self):
         graph = self.generate_graph()
 
         predicted_segments = [''] * 9
-        for (droplet, segments) in graph[:]:
-            if (droplet, segments) in graph and len(segments) == 1:
-                predicted_segments[segments[0]] = bin(droplet)[2:].zfill(4)  # Ensuring 4-bit binary format
-                graph.remove((droplet, segments))
-                self.update_graph(graph, droplet, segments[0])
+
+        # Keep processing the graph until no changes can be made
+        while True:
+            updated = False
+
+            for droplet, segments in graph[:]:
+                if (droplet, segments) in graph and len(segments) == 1:
+                    # Process and update the graph
+                    predicted_segments[segments[0]] = bin(droplet)[2:].zfill(4)  # 4-bit binary format
+                    graph.remove((droplet, segments))  # Remove the processed droplet
+                    self.update_graph(graph, droplet, segments[0])
+                    updated = True
+
+            # Exit the loop if no updates were made
+            if not updated:
+                break
 
         return predicted_segments[1:]
