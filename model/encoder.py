@@ -43,11 +43,18 @@ class Encoder:
     def encode_oligomers(self):
         droplets = self.generate_droplets()
 
-        print(f'Generated droplets: {droplets}')
+        print("Droplet Generation:")
+        print("--------------------")
+        for i, droplet in enumerate(droplets, start=1):
+            print(f"Droplet {i}: {droplet}")
+        print()
 
         oligomers = []
-        for droplet in droplets:
+        print("Encoding Droplets to DNA Oligomers:")
+        print("-----------------------------------")
+        for i, droplet in enumerate(droplets, start=1):
             oligomer = self.droplet_to_dna(droplet)
             oligomers.append(oligomer)
+            print(f"Droplet {i} -> Oligomer: {oligomer}")
 
         return oligomers

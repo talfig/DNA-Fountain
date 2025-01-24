@@ -19,7 +19,6 @@ if __name__ == "__main__":
     bits = '01000001101011110000010110100101'
     encoder = Encoder(seeds, ranks, bits)
     oligomers = encoder.encode_oligomers()
-    print(f'Generated oligomers: {oligomers}')
 
     decoder = Decoder(oligomers, ranks)
     predicted_bits = decoder.decode_oligomers()

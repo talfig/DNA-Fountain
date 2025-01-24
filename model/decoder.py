@@ -15,23 +15,35 @@ class Decoder:
     def generate_graph(self):
         # Create droplets by converting DNA sequences to droplet representations
         droplets = [self.dna_to_droplet(oligomer) for oligomer in self.oligomers]
-        print(f'Decoded droplets: {droplets}')
+
+        print()
+        print("Decoded Droplets:")
+        print("-----------------")
+        for i, droplet in enumerate(droplets, start=1):
+            print(f"Droplet {i}: {droplet}")
+        print()
 
         # Split droplets into seeds and remaining parts
         seeds = [droplet[:4] for droplet in droplets]
-        droplets = [droplet[4:] for droplet in droplets]
-        print(f'Generator seeds: {seeds}')
-        print(f'Generator ranks: {self.ranks}')
+        remaining_droplets = [droplet[4:] for droplet in droplets]
+
+        print("Generator Seeds and Ranks:")
+        print("---------------------------")
+        for i, (seed, rank) in enumerate(zip(seeds, self.ranks), start=1):
+            print(f"Seed {i}: {seed}, Rank: {rank}")
+        print()
 
         # Initialize the graph
         graph = []
 
-        # Populate the graph
-        for seed, droplet, rank in zip(seeds, droplets, self.ranks):
+        print("Graph Construction:")
+        print("--------------------")
+        for i, (seed, droplet, rank) in enumerate(zip(seeds, remaining_droplets, self.ranks), start=1):
             random.seed(int(seed, 2))  # Seed the random generator
-
-            # Convert droplet to an integer and append to graph as a tuple
-            graph.append((int(droplet, 2), random.sample(self.segments, rank)))
+            droplet_int = int(droplet, 2)
+            connections = random.sample(self.segments, rank)
+            graph.append((droplet_int, connections))
+            print(f"Node {i}: Droplet {droplet_int}, Connections: {connections}")
 
         return graph
 
@@ -48,8 +60,14 @@ class Decoder:
 
     def decode_oligomers(self):
         graph = self.generate_graph()
-
         predicted_segments = [''] * 9
+
+        print()
+        print("Initial Bipartite Graph:")
+        print("------------------------")
+        for node, edges in graph:
+            print(f"Node: {node}, Edges: {edges}")
+        print()
 
         # Keep processing the graph until no changes can be made
         while True:
@@ -57,9 +75,12 @@ class Decoder:
 
             for droplet, segments in graph[:]:
                 if (droplet, segments) in graph and len(segments) == 1:
-                    print(f'Bipartite graph: {graph}')
-                    print(f'Selected edge: {droplet, segments}')
-                    print(f'Predicted segments: {predicted_segments}')
+                    print("Processing Droplet with Single Segment:")
+                    print("---------------------------------------")
+                    print(f"Current Graph: {[{'node': n, 'edges': e} for n, e in graph]}")
+                    print(f"Selected Edge: Node {droplet}, Segment {segments}")
+                    print(f"Predicted Segments: {predicted_segments}")
+                    print()
 
                     # Process and update the graph
                     predicted_segments[segments[0]] = bin(droplet)[2:].zfill(4)  # 4-bit binary format
@@ -71,5 +92,15 @@ class Decoder:
             if not updated:
                 break
 
-        print(f'Bipartite graph: {graph}')
+        print("Final Bipartite Graph:")
+        print("----------------------")
+        for node, edges in graph:
+            print(f"Node: {node}, Edges: {edges}")
+        print()
+
+        print("Final Predicted Segments:")
+        print("--------------------------")
+        for i, segment in enumerate(predicted_segments[1:], start=1):
+            print(f"Segment {i}: {segment}")
+
         return predicted_segments[1:]
