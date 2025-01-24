@@ -98,7 +98,7 @@ class Encoder:
         droplets = self.generate_droplets()
 
         print("Droplet Generation:")
-        print("--------------------")
+        print("-------------------")
         for i, droplet in enumerate(droplets, start=1):
             print(f"Droplet {i}: {droplet}")
         print()

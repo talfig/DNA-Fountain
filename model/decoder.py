@@ -66,7 +66,7 @@ class Decoder:
         remaining_droplets = [droplet[4:] for droplet in droplets]
 
         print("Generator Seeds and Ranks:")
-        print("---------------------------")
+        print("--------------------------")
         for i, (seed, rank) in enumerate(zip(seeds, self.ranks), start=1):
             print(f"Seed {i}: {seed}, Rank: {rank}")
         print()
@@ -75,7 +75,7 @@ class Decoder:
         graph = []
 
         print("Graph Construction:")
-        print("--------------------")
+        print("-------------------")
         for i, (seed, droplet, rank) in enumerate(zip(seeds, remaining_droplets, self.ranks), start=1):
             random.seed(int(seed, 2))  # Seed the random generator
             droplet_int = int(droplet, 2)
@@ -148,7 +148,7 @@ class Decoder:
                 break
 
         print("Final Predicted Segments:")
-        print("--------------------------")
+        print("-------------------------")
         for i, segment in enumerate(predicted_segments[1:], start=1):
             print(f"Segment {i}: {segment}")
 

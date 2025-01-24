@@ -25,4 +25,6 @@ if __name__ == "__main__":
     predicted_bits = decoder.decode_oligomers()
 
     # Print the decoded bits
-    print(f'Predicted bits: {" ".join(predicted_bits)}')
+    print('Predicted bits:')
+    print("---------------")
+    print(" ".join(predicted_bits))
