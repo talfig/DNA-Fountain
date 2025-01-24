@@ -9,19 +9,22 @@ class Decoder:
         oligomers (list): A list of DNA oligomers to be decoded.
         ranks (list): A list of ranks associated with the oligomers.
         segments (list): A predefined set of segments (1 through 8).
+        sample_size (int): The number of random droplets to be selected.
     """
 
-    def __init__(self, oligomers, ranks):
+    def __init__(self, oligomers, ranks, sample_size=13):
         """
         Initializes the Decoder object with a list of oligomers and ranks.
 
         Args:
             oligomers (list): List of DNA oligomers to be decoded.
             ranks (list): List of ranks associated with the oligomers.
+            sample_size (int, optional): The number of random droplets to be selected (default is 11).
         """
         self.oligomers = oligomers
         self.ranks = ranks
         self.segments = [i for i in range(1, 9)]
+        self.sample_size = sample_size
 
     @staticmethod
     def dna_to_droplet(dna):
@@ -71,12 +74,17 @@ class Decoder:
             print(f"Seed {i}: {seed}, Rank: {rank}")
         print()
 
+        # Combine seeds, droplets, and ranks, then select a random sample
+        random.seed()
+        droplets_data = list(zip(seeds, remaining_droplets, self.ranks))
+        chosen_droplets = random.sample(droplets_data, self.sample_size)
+
         # Initialize the graph
         graph = []
 
         print("Graph Construction:")
         print("-------------------")
-        for i, (seed, droplet, rank) in enumerate(zip(seeds, remaining_droplets, self.ranks), start=1):
+        for i, (seed, droplet, rank) in enumerate(chosen_droplets, start=1):
             random.seed(int(seed, 2))  # Seed the random generator
             droplet_int = int(droplet, 2)
             connections = random.sample(self.segments, rank)
