@@ -15,11 +15,12 @@ ranks = [
     7, 2, 1, 4
 ]
 
-bits = '01000001101011110000010110100101'
-encoder = Encoder(seeds, ranks, bits)
-oligomers = encoder.encode_oligomers()
-print(oligomers)
+if __name__ == "__main__":
+    bits = '01000001101011110000010110100101'
+    encoder = Encoder(seeds, ranks, bits)
+    oligomers = encoder.encode_oligomers()
+    print(oligomers)
 
-decoder = Decoder(oligomers, ranks)
-predicted_bits = decoder.decode_oligomers()
-print(predicted_bits)
+    decoder = Decoder(oligomers, ranks)
+    predicted_bits = decoder.decode_oligomers()
+    print(predicted_bits)
