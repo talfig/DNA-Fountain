@@ -147,12 +147,6 @@ class Decoder:
             if not updated:
                 break
 
-        print("Final Bipartite Graph:")
-        print("----------------------")
-        for node, edges in graph:
-            print(f"Node: {node}, Edges: {edges}")
-        print()
-
         print("Final Predicted Segments:")
         print("--------------------------")
         for i, segment in enumerate(predicted_segments[1:], start=1):
