@@ -134,7 +134,7 @@ class Decoder:
                     print("---------------------------------------")
                     print(f"Current Graph: {[{'node': n, 'edges': e} for n, e in graph]}")  # Display current state
                     print(f"Selected Edge: Node {droplet}, Segment {segments}")
-                    print(f"Predicted Segments: {predicted_segments}")
+                    print(f"Predicted Segments: {predicted_segments[1:]}")
                     print()
 
                     # Process and update the graph
