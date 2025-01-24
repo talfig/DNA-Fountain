@@ -15,10 +15,13 @@ class Decoder:
     def generate_graph(self):
         # Create droplets by converting DNA sequences to droplet representations
         droplets = [self.dna_to_droplet(oligomer) for oligomer in self.oligomers]
+        print(f'Decoded droplets: {droplets}')
 
         # Split droplets into seeds and remaining parts
         seeds = [droplet[:4] for droplet in droplets]
         droplets = [droplet[4:] for droplet in droplets]
+        print(f'Generator seeds: {seeds}')
+        print(f'Generator ranks: {self.ranks}')
 
         # Initialize the graph
         graph = []
@@ -40,6 +43,8 @@ class Decoder:
             if segment in segments:
                 segments.remove(segment)
                 graph[idx] = (droplet ^ key, segments)
+                if not segments:
+                    graph.pop(idx)
 
     def decode_oligomers(self):
         graph = self.generate_graph()
@@ -52,6 +57,10 @@ class Decoder:
 
             for droplet, segments in graph[:]:
                 if (droplet, segments) in graph and len(segments) == 1:
+                    print(f'Bipartite graph: {graph}')
+                    print(f'Selected edge: {droplet, segments}')
+                    print(f'Predicted segments: {predicted_segments}')
+
                     # Process and update the graph
                     predicted_segments[segments[0]] = bin(droplet)[2:].zfill(4)  # 4-bit binary format
                     graph.remove((droplet, segments))  # Remove the processed droplet
@@ -62,4 +71,5 @@ class Decoder:
             if not updated:
                 break
 
+        print(f'Bipartite graph: {graph}')
         return predicted_segments[1:]
