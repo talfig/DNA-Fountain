@@ -1,7 +1,7 @@
 from model.encoder import Encoder
 from model.decoder import Decoder
 
-
+# Seeds and ranks used for encoding and decoding
 seeds = [
     '0000', '0001', '0010', '0011',
     '0100', '0101', '0110', '0111',
@@ -17,9 +17,12 @@ ranks = [
 
 if __name__ == "__main__":
     bits = '01000001101011110000010110100101'
+
+    # Encode and decode the DNA sequence
     encoder = Encoder(seeds, ranks, bits)
     oligomers = encoder.encode_oligomers()
-
     decoder = Decoder(oligomers, ranks)
     predicted_bits = decoder.decode_oligomers()
-    print(f'Predicted bits: {' '.join(predicted_bits)}')
+
+    # Print the decoded bits
+    print(f'Predicted bits: {" ".join(predicted_bits)}')
