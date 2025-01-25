@@ -12,7 +12,7 @@ class Decoder:
         sample_size (int): The number of random droplets to be selected.
     """
 
-    def __init__(self, oligomers, ranks, sample_size=13):
+    def __init__(self, oligomers, ranks, sample_size=15):
         """
         Initializes the Decoder object with a list of oligomers and ranks.
 
