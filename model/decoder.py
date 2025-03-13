@@ -1,48 +1,40 @@
 import random
+from collections import defaultdict
+from itertools import chain
 
 
 class Decoder:
-    """
-    A class responsible for decoding DNA sequences and constructing a bipartite graph of droplets and their associated segments.
-
-    Attributes:
-        oligomers (list): A list of DNA oligomers to be decoded.
-        ranks (list): A list of ranks associated with the oligomers.
-        segments (list): A predefined set of segments (1 through 8).
-        sample_size (int): The number of random droplets to be selected.
-    """
-
-    def __init__(self, oligomers, ranks, sample_size=15):
-        """
-        Initializes the Decoder object with a list of oligomers and ranks.
-
-        Args:
-            oligomers (list): List of DNA oligomers to be decoded.
-            ranks (list): List of ranks associated with the oligomers.
-            sample_size (int, optional): The number of random droplets to be selected (default is 11).
-        """
-        self.oligomers = oligomers
-        self.ranks = ranks
-        self.segments = [i for i in range(1, 9)]
+    def __init__(self, oligomers, msg_size, segment_size=36, sample_size=100):
+        self.padding_length = 0
+        if msg_size % segment_size != 0:
+            self.padding_length = segment_size - (msg_size % segment_size)
+        self.segment_size = segment_size
         self.sample_size = sample_size
+        self.oligomers = oligomers
+        self.segments = [i for i in range(1, (msg_size + self.padding_length) // segment_size + 1)]
 
     @staticmethod
-    def dna_to_droplet(dna):
-        """
-        Converts a DNA sequence into its corresponding droplet representation.
+    def dna_to_bits(dna):
+        word_to_bit_mapping = {'AL': '000', 'AM': '001',
+                               'CL': '010', 'CM': '011',
+                               'TL': '100', 'TM': '101',
+                               'GL': '110', 'GM': '111'}
+        dna_to_letter_mapping = {'CT': 'L', 'TC': 'L',
+                                 'AG': 'M', 'GA': 'M'}
 
-        Each DNA base (A, C, G, T) is converted into a two-bit binary representation.
+        # Build droplet string by iterating through DNA sequence
+        droplet = ''
+        for i in range(0, len(dna), 3):
+            pair = dna[i + 1:i + 3]  # Two characters
+            letter = dna_to_letter_mapping.get(pair, '')  # Get corresponding letter
 
-        Args:
-            dna (str): The DNA sequence consisting of characters 'A', 'C', 'G', 'T'.
+            if letter:
+                word = dna[i] + letter  # Combine the first character and the mapped letter
+                droplet += word_to_bit_mapping.get(word, '')  # Append the corresponding bit sequence
 
-        Returns:
-            str: The droplet representation as a string of bits.
-        """
-        mapping = {'A': '00', 'C': '01', 'G': '10', 'T': '11'}
-        return ''.join([mapping[base] for base in dna])
+        return droplet
 
-    def generate_graph(self):
+    def generate_graph(self, min_droplet_sample=10):
         """
         Generates a bipartite graph based on the decoded droplets and their connections.
 
@@ -54,8 +46,21 @@ class Decoder:
             list: A list of tuples representing the graph, where each tuple contains:
                   (droplet, list of connected segments).
         """
-        # Create droplets by converting DNA sequences to droplet representations
-        droplets = [self.dna_to_droplet(oligomer) for oligomer in self.oligomers]
+        # Create droplets by grouping oligomers with the same barcode
+        droplets = defaultdict(list)
+
+        # Group oligomers based on the barcode
+        for oligomer in self.oligomers:
+            barcode = oligomer[:10]
+            droplets[barcode].append(oligomer[10:])
+
+        # Randomly sample 10 oligomers from each barcode group (if there are at least 10, otherwise take all)
+        selected_oligomers = list(chain.from_iterable(
+            random.sample(group, min(min_droplet_sample, len(group))) for group in droplets.values()
+        ))
+
+        # Convert selected oligomers into DNA representation
+        droplets = [self.dna_to_bits(oligomer) for oligomer in selected_oligomers]
 
         print()
         print("Decoded Droplets:")
@@ -64,19 +69,19 @@ class Decoder:
             print(f"Droplet {i}: {droplet}")
         print()
 
-        # Split droplets into seeds and remaining parts
-        seeds = [droplet[:4] for droplet in droplets]
-        remaining_droplets = [droplet[4:] for droplet in droplets]
+        seeds = [droplet[:9] for droplet in droplets]
+        ranks = [droplet[9:15] for droplet in droplets]
+        remaining_droplets = [droplet[15:] for droplet in droplets]
 
         print("Generator Seeds and Ranks:")
         print("--------------------------")
-        for i, (seed, rank) in enumerate(zip(seeds, self.ranks), start=1):
+        for i, (seed, rank) in enumerate(zip(seeds, ranks), start=1):
             print(f"Seed {i}: {seed}, Rank: {rank}")
         print()
 
         # Combine seeds, droplets, and ranks, then select a random sample
         random.seed()
-        droplets_data = list(zip(seeds, remaining_droplets, self.ranks))
+        droplets_data = list(zip(seeds, ranks, remaining_droplets))
         chosen_droplets = random.sample(droplets_data, self.sample_size)
 
         # Initialize the graph
@@ -84,10 +89,10 @@ class Decoder:
 
         print("Graph Construction:")
         print("-------------------")
-        for i, (seed, droplet, rank) in enumerate(chosen_droplets, start=1):
+        for i, (seed, rank, droplet) in enumerate(chosen_droplets, start=1):
             random.seed(int(seed, 2))  # Seed the random generator
             droplet_int = int(droplet, 2)
-            connections = random.sample(self.segments, rank)
+            connections = random.sample(self.segments, int(rank, 2))
             graph.append((droplet_int, connections))
             print(f"Node {i}: Droplet {droplet_int}, Connections: {connections}")
 
@@ -112,18 +117,8 @@ class Decoder:
                     graph.pop(idx)
 
     def decode_oligomers(self):
-        """
-        Decodes the oligomers by constructing the graph and iterating until all droplets
-        with single segments are processed.
-
-        This method iteratively processes droplets, removes nodes with single segments, and
-        updates the graph by predicting segment values based on droplet connections.
-
-        Returns:
-            list: A list of predicted segments for the decoded oligomers.
-        """
         graph = self.generate_graph()
-        predicted_segments = [''] * 9
+        predicted_segments = [''] * (len(self.segments) + 1)
 
         print()
         print("Initial Bipartite Graph:")
@@ -146,7 +141,7 @@ class Decoder:
                     print()
 
                     # Process and update the graph
-                    predicted_segments[segments[0]] = bin(droplet)[2:].zfill(4)  # 4-bit binary format
+                    predicted_segments[segments[0]] = bin(droplet)[2:].zfill(self.segment_size)  # 6-bit binary format
                     graph.remove((droplet, segments))  # Remove the processed droplet
                     self.update_graph(graph, droplet, segments[0])
                     updated = True
@@ -154,6 +149,8 @@ class Decoder:
             # Exit the loop if no updates were made
             if not updated:
                 break
+
+        predicted_segments[-1] = predicted_segments[-1][:-self.padding_length]
 
         print("Final Predicted Segments:")
         print("-------------------------")

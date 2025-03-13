@@ -4,51 +4,38 @@ from functools import reduce
 
 
 class Encoder:
-    """
-    The Encoder class is responsible for encoding a 32-bit binary sequence into DNA-based oligomers
-    using random sampling and XOR operations. It simulates the process of generating droplets from
-    binary segments, and then maps these droplets to DNA sequences.
-
-    Attributes:
-        seeds (list of str): A list of binary seed values (strings).
-        ranks (list of int): A list of integers indicating the number of segments to select randomly for each seed.
-        segments (list of str): A list of 4-bit binary segments derived from the input binary sequence.
-    """
-
-    def __init__(self, seeds, ranks, bits):
-        """
-        Initializes the Encoder instance.
-
-        Args:
-            seeds (list of str): A list of binary strings to serve as seeds.
-            ranks (list of int): A list of integers specifying how many segments to choose for each seed.
-            bits (str): A 32-bit binary sequence to be divided into 4-bit segments.
-
-        Raises:
-            AssertionError: If the input binary sequence is not 32 bits long.
-        """
-        assert len(bits) == 32, "Input must be a 32-bit binary sequence."
+    def __init__(self, seeds, ranks, bits, segment_size=36, pad_value='0'):
+        if len(bits) % segment_size != 0:
+            padding_length = segment_size - (len(bits) % segment_size)
+            bits += pad_value * padding_length
         self.seeds = seeds
         self.ranks = ranks
-        self.segments = [bits[i:i + 4] for i in range(0, len(bits), 4)]
+        self.segment_size = segment_size
+        self.segments = [bits[i:i + segment_size] for i in range(0, len(bits), segment_size)]
 
-    def generate_droplets(self):
+    @staticmethod
+    def generate_barcode(length=10):
         """
-        Generates droplets by randomly selecting segments and performing XOR operations.
+        Generates a random DNA sequence of the given length.
 
-        For each seed, `rank` segments are selected at random, their integer values are XORed,
-        and the result is converted back to a 4-bit binary string. The droplet is created by
-        concatenating the seed with this binary result.
+        Parameters:
+        length (int): The length of the DNA sequence to generate. Default is 10.
 
         Returns:
-            list of str: A list of generated droplets, each represented as a binary string.
+        str: A string representing a random DNA sequence composed of A, C, T, and G.
         """
+        bases = ['A', 'C', 'T', 'G']
+        return ''.join(random.choices(bases, k=length))
+
+    def generate_droplets(self):
         droplets = []
-        for seed, rank in zip(self.seeds, self.ranks):
-            random.seed(int(seed, 2))
+        for seed in self.seeds:
+            random.seed()
+            d = random.sample(self.ranks, 1)[0]
 
             # Randomly select `rank` segments
-            chosen_segments = random.sample(self.segments, rank)
+            random.seed(int(seed, 2))
+            chosen_segments = random.sample(self.segments, d)
 
             # Convert strings to integers
             chosen_segments = [int(segment, 2) for segment in chosen_segments]
@@ -56,11 +43,12 @@ class Encoder:
             # XOR the selected segments
             xor_result = reduce(operator.xor, chosen_segments)
 
-            # Convert XOR result to binary string and ensure it's 4 bits long
-            binary_result = bin(xor_result)[2:].zfill(4)
+            # Store the rank in binary
+            d_bin = bin(d)[2:].zfill(6)
 
-            # Concatenate the seed to the droplet
-            droplet = f"{seed}{binary_result}"
+            binary_result = bin(xor_result)[2:].zfill(self.segment_size)
+
+            droplet = f"{seed}{d_bin}{binary_result}"
 
             # Append the droplet to the droplets list
             droplets.append(droplet)
@@ -68,21 +56,21 @@ class Encoder:
         return droplets
 
     @staticmethod
-    def droplet_to_dna(droplet):
-        """
-        Converts a binary droplet string into a DNA sequence.
+    def bits_to_dna(bits, pad_value='0'):
+        bit_to_word_mapping = {'000': 'AL', '001': 'AM',
+                               '010': 'CL', '011': 'CM',
+                               '100': 'TL', '101': 'TM',
+                               '110': 'GL', '111': 'GM'}
+        letter_to_dna_mapping = {'L': ['CT', 'TC'], 'M': ['AG', 'GA']}
 
-        Args:
-            droplet (str): A binary string representing a droplet.
+        # Convert bits to words
+        words = ''.join(bit_to_word_mapping[bits[i:i + 3]] for i in range(0, len(bits), 3))
 
-        Returns:
-            str: A DNA sequence mapped from the binary droplet.
-
-        Mapping:
-            '00' -> 'A', '01' -> 'C', '10' -> 'G', '11' -> 'T'
-        """
-        mapping = {'00': 'A', '01': 'C', '10': 'G', '11': 'T'}
-        return ''.join([mapping[droplet[i:i + 2]] for i in range(0, len(droplet), 2)])
+        # Convert words to DNA sequence
+        dna_sequence = ''.join(random.choice(letter_to_dna_mapping[char])
+                               if char in letter_to_dna_mapping
+                               else char for char in words)
+        return dna_sequence
 
     def encode_oligomers(self):
         """
@@ -107,8 +95,12 @@ class Encoder:
         print("Encoding Droplets to DNA Oligomers:")
         print("-----------------------------------")
         for i, droplet in enumerate(droplets, start=1):
-            oligomer = self.droplet_to_dna(droplet)
-            oligomers.append(oligomer)
-            print(f"Droplet {i} -> Oligomer: {oligomer}")
+            barcode = self.generate_barcode()
+            for j in range(1, 101):
+                words = self.bits_to_dna(droplet)
+                oligomer = barcode + words
+                oligomers.append(oligomer)
+                print(f"Droplet {i} -> Oligomer {j}: {oligomer}")
 
+        random.shuffle(oligomers)
         return oligomers
